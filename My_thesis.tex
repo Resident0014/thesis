@@ -31,6 +31,7 @@
 %% 
 \input{my_folder/my_settings} % добавляем свои команды / update your commands
 
+
 \begin{document} % начало документа
 
 
@@ -58,16 +59,18 @@
 \ContinueChapterBegin % размещать главы <<подряд>> 
 \input{my_folder/chapter2}	         	 % Глава 2
 \input{my_folder/chapter3}           	 % Глава 3
-\input{my_folder/chapter4}           	 % Глава 3
+\input{my_folder/chapter4}           	 % Глава 4
+\input{my_folder/chapter5}               % Глава 5
+\input{my_folder/chapter6}               % Глава 6
 \ContinueChapterEnd % завершить размещение глав <<подряд>>
 %% Завершение основной части
 
 \input{my_folder/conclusion}        	 % Заключение
 
 %% Наличие следующих перечней не исключает расшифровку сокращения и условного обозначения при первом упоминании в тексте!
-\input{my_folder/acronyms}		         % Необязательная рубрика! Список сокращений и условных обозначений
+%\input{my_folder/acronyms}		         % Необязательная рубрика! Список сокращений и условных обозначений
 
-\input{my_folder/dictionary}    		 % Необязательная рубрика! Словарь терминов
+%\input{my_folder/dictionary}    		 % Необязательная рубрика! Словарь терминов
 % По порядку после Списка сокращений и условных обозначений, если есть.	
 
 
@@ -83,7 +86,6 @@
 \input{my_folder/appendix2}			 	 % Приложение 2
 
 
-\end{document} % конец документа
 
 
 %%% Удачной защиты ВКР! - Good luck on the thesis defense!
@@ -123,3 +125,4 @@
 % Check list при передаче ВКР:
 % - Количество страниц в Задании 2. Если нет, то комментирование последней строки в my_task.tex
 % - Зачистка всех вспомогательных файлов (Clear auxilary files) и компиляция ВКР не менее 3х раз
+\end{document}
