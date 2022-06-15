@@ -1,73 +1,716 @@
-\chapter{Некоторые дополнительные примеры}\label{appendix-extra-examples}							% 
+\chapter{Исходный код клиентской части визуализатора}\label{appendix-MikTeX-TexStudio}							%
 
-В приложении\footnote{Внимание! Пример оформления подстрочной ссылки (сноски).} приведены формулы \eqref{eq:Pi-app}, \eqref{eq:Pi-app-}, \firef{fig:spbpu_hydrotower-app}, \firef{fig:spbpu_hydrotower-app-}, \taref{tab:ToyCompare-app}, \taref{tab:ToyCompare-app-}
+\lstset{
+frame=single,
+numbersep = 5pt,
+stepnumber = 1
+}
 
+\begin{lstlisting}[language=Java,
+caption={ast.js}]
 
-\begin{equation}% лучше не оставлять пропущенную строку (\par) перед окружениями для избежания лишних отсупов в pdf
-\label{eq:Pi-app-} % eq - equations, далее название, ch поставлено для избежания дублирования
-\pi \approx 3,141.
-\end{equation}
-%
-%
-\begin{figure}[ht!] 
-	\center
-	\includegraphics [scale=0.27] {my_folder/images//spbpu_hydrotower}
-	\caption{Вид на гидробашню СПбПУ \cite{spbpu-gallery}} 
-	\label{fig:spbpu_hydrotower-app-}  
-\end{figure}
+export const getData = (tree) => {
+  const nodes = []
+  const edges = []
+  const hierarchy = {}
 
-\begin{table} [htbp]% Пример оформления таблицы
-	\centering\small
-	\caption{Представление данных для сквозного примера по ВКР \cite{Peskov2004}}%
-	\label{tab:ToyCompare-app-}		
-	\begin{tabular}{|l|l|l|l|l|l|}
-		\hline
-		$G$&$m_1$&$m_2$&$m_3$&$m_4$&$K$\\
-		\hline
-		$g_1$&0&1&1&0&1\\ \hline
-		$g_2$&1&2&0&1&1\\ \hline
-		$g_3$&0&1&0&1&1\\ \hline
-		$g_4$&1&2&1&0&2\\ \hline
-		$g_5$&1&1&0&1&2\\ \hline
-		$g_6$&1&1&1&2&2\\ \hline		
-	\end{tabular}	
-	\normalsize% возвращаем шрифт к нормальному
-\end{table}
+  const addNode = (node, from) => {
+    node.idx = nodes.push(node) - 1
+    node.hidden = false
+    node.from = from
+    if (!hierarchy[from]) {
+      hierarchy[from] = []
+    }
+    hierarchy[from].push(node.idx)
+    edges.push({ from, to: node.idx, hidden: false })
+    return node.idx
+  }
 
+  const parseNode = (node, edgeFrom = null, name = null) => {
+    if (Array.isArray(node)) {
+      const parentIdx = addNode({ label: name }, edgeFrom)
+      for (const subNode of node) {
+        parseNode(subNode, parentIdx)
+      }
+    } else if (typeof node === 'object') {
+      const { _type, ...fields } = node
+      const parentIdx = addNode({
+        label: name ? `${name}\n${_type}` : _type,
+        orig: node
+      }, edgeFrom)
+      for (const [fieldName, subNode] of Object.entries(fields)) {
+        parseNode(subNode, parentIdx, fieldName)
+      }
+    } else {
+      addNode({ label: `${name}\n${node}` }, edgeFrom)
+    }
+  }
 
+  parseNode(tree)
 
+  edges.shift()
 
-\section{Подраздел приложения}\label{app-2-1}							
+  return { nodes, edges, hierarchy }
+}
 
+export const dataToAstDigraph = (nodes, edges) => {
+  const lines = []
+  for (const [i, node] of nodes.entries()) {
+    if (node.hidden) continue
+    const attrs = [
+      `label="${escapeQuotes(node.label)}"`,
+      'shape="box"'
+    ]
+    if (node.clicked) {
+      attrs.push('style="filled", fillcolor="blue", fontcolor="white"')
+    }
+    lines.push(`n${i} [${attrs.join(',')}]`)
+  }
+  for (const edge of edges) {
+    if (edge.hidden) continue
+    lines.push(`n${edge.from} -> n${edge.to}`)
+  }
+  return `digraph { ${lines.join(';')} }`
+}
+\end{lstlisting}
 
-\begin{equation}% лучше не оставлять пропущенную строку (\par) перед окружениями для избежания лишних отсупов в pdf
-\label{eq:Pi-app} % eq - equations, далее название, ch поставлено для избежания дублирования
-\pi \approx 3,141.
-\end{equation}
-%
-%
-\begin{figure}[ht!] 
-	\center
-	\includegraphics [scale=0.27] {my_folder/images//spbpu_hydrotower}
-	\caption{Вид на гидробашню СПбПУ \cite{spbpu-gallery}} 
-	\label{fig:spbpu_hydrotower-app}  
-\end{figure}
+\begin{lstlisting}[language=Java,
+caption={cfg.js}]
+import { getType, getCodeGetterByElement, escapeQuotes } from './_common'
 
-\begin{table} [htbp]% Пример оформления таблицы
-	\centering\small
-	\caption{Представление данных для сквозного примера по ВКР \cite{Peskov2004}}%
-	\label{tab:ToyCompare-app}		
-	\begin{tabular}{|l|l|l|l|l|l|}
-		\hline
-		$G$&$m_1$&$m_2$&$m_3$&$m_4$&$K$\\
-		\hline
-		$g_1$&0&1&1&0&1\\ \hline
-		$g_2$&1&2&0&1&1\\ \hline
-		$g_3$&0&1&0&1&1\\ \hline
-		$g_4$&1&2&1&0&2\\ \hline
-		$g_5$&1&1&0&1&2\\ \hline
-		$g_6$&1&1&1&2&2\\ \hline		
-	\end{tabular}	
-	\normalsize% возвращаем шрифт к нормальному
-\end{table}
+export const getCfgData = (code, tree) => {
+  const getCode = getCodeGetterByElement(code)
 
+  const nodes = []
+  const edges = []
+
+  const operators = {
+    PLUS: '+',
+    MINUS: '-',
+    MULTIPLY: '*',
+    DIVIDE: '/',
+    REMAINDER: '%',
+    XOR: '^',
+    BINARY_AND: '&',
+    BINARY_OR: '|',
+    ASSIGN: ''
+  }
+
+  const edgesQueue = []
+  const loopStack = []
+  const addSimpleNode = (node) => {
+    const idx = nodes.push(node) - 1
+    do {
+      const e = edgesQueue.shift()
+      e.to = idx
+      edges.push(e)
+    } while (edgesQueue.length)
+    edgesQueue.push({
+      from: idx, to: null, type: 'simple'
+    })
+    return idx
+  }
+
+  const addItem = (item) => {
+    const adder = addItemByType[getType(item['!'])]
+    if (adder) {
+      adder(item)
+    } else {
+      addSimpleNode({
+        type: 'statement',
+        label: `${getCode(item)}`,
+        elem: item
+      })
+    }
+  }
+
+  const addItemByType = {
+    MethodDeclaration: (m) => {
+      const params = m.parameters.map(p => p.name.identifier).join(', ')
+      const idx = nodes.push({
+        type: 'method',
+        label: `${m.name.identifier}(${params})`,
+        elem: m
+      }) - 1
+      edgesQueue.push({
+        from: idx, to: null, type: 'simple'
+      })
+      addItem(m.body)
+    },
+    ExpressionStmt: (st) => {
+      addItem(st.expression)
+    },
+    VariableDeclarationExpr: (expr) => {
+      for (const v of expr.variables) {
+        if (v.initializer) {
+          addSimpleNode({
+            type: 'statement',
+            label: `${v.name.identifier} = ${getCode(v.initializer)}`,
+            elem: v
+          })
+        }
+      }
+    },
+    AssignExpr: (expr) => {
+      addSimpleNode({
+        type: 'statement',
+        label: `${getCode(expr.target)} ${operators[expr.operator]}= ${getCode(expr.value)}`,
+        elem: expr
+      })
+    },
+    BlockStmt: (st) => {
+      for (const statement of st.statements) {
+        addItem(statement)
+      }
+    },
+    WhileStmt: (st) => {
+      const idx = addSimpleNode({
+        type: 'condition',
+        label: `${getCode(st.condition)}`,
+        elem: st.condition
+      })
+      edgesQueue[0].type = 'trueBranch'
+      const loop = {
+        breaks: [],
+        continues: []
+      }
+      loopStack.push(loop)
+      addItem(st.body)
+      for (const edge of loop.continues) {
+        edgesQueue.push(edge)
+      }
+      while (edgesQueue.length) {
+        const e = edgesQueue.shift()
+        e.to = idx
+        edges.push(e)
+      }
+      edgesQueue.push({
+        from: idx, to: null, type: 'falseBranch'
+      })
+      for (const edge of loop.breaks) {
+        edgesQueue.push(edge)
+      }
+      loopStack.pop()
+    },
+    ForStmt: (forSt) => {
+      for (const st of forSt.initialization) {
+        addItem(st)
+      }
+      const idx = addSimpleNode({
+        type: 'condition',
+        label: `${forSt.compare ? getCode(forSt.compare) : 'true'}`,
+        elem: forSt.compare
+      })
+      edgesQueue[0].type = 'trueBranch'
+      const loop = {
+        breaks: [],
+        continues: []
+      }
+      loopStack.push(loop)
+      addItem(forSt.body)
+      for (const edge of loop.continues) {
+        edgesQueue.push(edge)
+      }
+      for (const st of forSt.update) {
+        addItem(st)
+      }
+      while (edgesQueue.length) {
+        const e = edgesQueue.shift()
+        e.to = idx
+        edges.push(e)
+      }
+      edgesQueue.push({
+        from: idx, to: null, type: 'falseBranch'
+      })
+      for (const edge of loop.breaks) {
+        edgesQueue.push(edge)
+      }
+      loopStack.pop()
+    },
+    IfStmt: (st) => {
+      const idx = addSimpleNode({
+        type: 'condition',
+        label: `${getCode(st.condition)}`,
+        elem: st.condition
+      })
+      edgesQueue[0].type = 'trueBranch'
+      addItem(st.thenStmt)
+      const thenEdges = edgesQueue.splice(0, edgesQueue.length)
+      edgesQueue.push({
+        from: idx, to: null, type: 'falseBranch'
+      })
+      if (st.elseStmt) {
+        addItem(st.elseStmt)
+      }
+      edgesQueue.push(...thenEdges)
+    },
+    ReturnStmt: (st) => {
+      addSimpleNode({
+        type: 'return',
+        label: `return ${getCode(st.expression)}`,
+        elem: st
+      })
+      while (edgesQueue.length) {
+        edgesQueue.pop()
+      }
+    },
+    BreakStmt: () => {
+      const { breaks } = loopStack[loopStack.length - 1]
+      while (edgesQueue.length) {
+        breaks.push(edgesQueue.shift())
+      }
+    },
+    ContinueStmt: () => {
+      const { continues } = loopStack[loopStack.length - 1]
+      while (edgesQueue.length) {
+        continues.push(edgesQueue.shift())
+      }
+    }
+  }
+
+  addItem(tree)
+
+  return { nodes, edges }
+}
+
+export const cfgDataToDigraph = (cfgData) => {
+  const lines = []
+  for (const [i, node] of cfgData.nodes.entries()) {
+    let shape
+    if (node.type === 'method' || node.type === 'return') {
+      shape = 'ellipse'
+    } else if (node.type === 'statement') {
+      shape = 'box'
+    } else if (node.type === 'condition') {
+      shape = 'diamond'
+    }
+    lines.push(`n${i} [label="${escapeQuotes(node.label)}", shape="${shape}"]`)
+  }
+  for (const edge of cfgData.edges) {
+    let line = `n${edge.from} -> n${edge.to}`
+    const attrs = []
+    if (edge.type === 'trueBranch') {
+      attrs.push('label="да"')
+    }
+    if (edge.type === 'falseBranch') {
+      attrs.push('label="нет"')
+    }
+    if (attrs.length) {
+      line += ` [${attrs.join(' ')}]`
+    }
+    lines.push(line)
+  }
+  return `digraph { ${lines.join(';')} }`
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=Java,
+caption={ddg-pdg.js}]
+import { getType, escapeQuotes } from './_common'
+import { getCfgData } from './cfg'
+
+const getNodeReadVariables = (node) => {
+  const addItem = (item) => {
+    const adder = addItemByType[getType(item['!'])]
+    if (adder) {
+      adder(item)
+    }
+  }
+  const addItemByType = {
+    ExpressionStmt: (st) => {
+      addItem(st.expression)
+    },
+    VariableDeclarationExpr: (expr) => {
+      for (const v of expr.variables) {
+        addItem(v)
+      }
+    },
+    VariableDeclarator: (expr) => {
+      if (expr.initializer) {
+        addItem(expr.initializer)
+      }
+    },
+    AssignExpr: (expr) => {
+      if (expr.operator !== 'ASSIGN') {
+        addItem(expr.target)
+      }
+      addItem(expr.value)
+    },
+    ReturnStmt: (st) => {
+      addItem(st.expression)
+    },
+    MethodCallExpr: (expr) => {
+      for (const arg of expr.arguments) {
+        addItem(arg)
+      }
+    },
+    BinaryExpr: (expr) => {
+      addItem(expr.left)
+      addItem(expr.right)
+    },
+    UnaryExpr: (expr) => {
+      addItem(expr.expression)
+    },
+    ArrayCreationExpr: (expr) => {
+      for (const level of expr.levels) {
+        addItem(level)
+      }
+    },
+    ArrayCreationLevel: (expr) => {
+      addItem(expr.dimension)
+    },
+    FieldAccessExpr: (expr) => {
+      addItem(expr.scope)
+    },
+    ArrayAccessExpr: (expr) => {
+      addItem(expr.name)
+      addItem(expr.index)
+    },
+    EnclosedExpr: (expr) => {
+      addItem(expr.inner)
+    },
+    NameExpr: (expr) => {
+      addItem(expr.name)
+    },
+    SimpleName: (name) => {
+      set.add(name.identifier)
+    }
+  }
+  const set = new Set()
+  addItem(node.elem)
+  return set
+}
+const getNodeWriteVariables = (node) => {
+  const addItem = (item) => {
+    const adder = addItemByType[getType(item['!'])]
+    if (adder) {
+      adder(item)
+    }
+  }
+  const addItemByType = {
+    MethodDeclaration: (m) => {
+      for (const param of m.parameters) {
+        addItem(param.name)
+      }
+    },
+    ExpressionStmt: (st) => {
+      addItem(st.expression)
+    },
+    VariableDeclarationExpr: (expr) => {
+      for (const v of expr.variables) {
+        addItem(v)
+      }
+    },
+    VariableDeclarator: (expr) => {
+      if (expr.initializer) {
+        addItem(expr.name)
+      }
+    },
+    AssignExpr: (expr) => {
+      addItem(expr.target)
+    },
+    UnaryExpr: (expr) => {
+      addItem(expr.expression)
+    },
+    NameExpr: (expr) => {
+      addItem(expr.name)
+    },
+    SimpleName: (name) => {
+      set.add(name.identifier)
+    }
+  }
+  const set = new Set()
+  addItem(node.elem)
+  return set
+}
+
+const setVarContext = (nodes, from, vars) => {
+  let changed = false
+  for (const [v, nodeIdx] of Object.entries(vars)) {
+    let w = nodes[from].varContext[v]
+    if (!w) {
+      w = nodes[from].varContext[v] = new Set()
+    }
+    if (!w.has(nodeIdx)) {
+      w.add(nodeIdx)
+      changed = true
+    }
+  }
+  nodes[from].visited = true
+  for (const v of nodes[from].writeVariables) {
+    vars[v] = from
+  }
+  for (const to of nodes[from].jumps) {
+    if (!nodes[to].visited || changed) {
+      setVarContext(nodes, to, { ...vars })
+    }
+  }
+}
+
+const getDeps = (nodes) => {
+  const deps = []
+  for (const [to, node] of nodes.entries()) {
+    for (const v of node.readVariables) {
+      for (const from of node.varContext[v]) {
+        deps.push({ from, to })
+      }
+    }
+  }
+  return deps
+}
+
+const getData = (code, tree) => {
+  const { nodes, edges } = getCfgData(code, tree)
+  for (const node of nodes) {
+    node.jumps = []
+    node.varContext = {}
+    node.readVariables = getNodeReadVariables(node)
+    node.writeVariables = getNodeWriteVariables(node)
+  }
+  for (const edge of edges) {
+    nodes[edge.from].jumps.push(edge.to)
+  }
+  setVarContext(nodes, 0, {})
+  const deps = getDeps(nodes)
+  return { nodes, edges, deps }
+}
+
+const dataToDigraph = (code, tree, defaultEdgeAttr) => {
+  const data = getData(code, tree)
+  const lines = []
+  for (const [i, node] of data.nodes.entries()) {
+    let shape
+    if (node.type === 'method' || node.type === 'return') {
+      shape = 'ellipse'
+    } else if (node.type === 'statement') {
+      shape = 'box'
+    } else if (node.type === 'condition') {
+      shape = 'diamond'
+    }
+    lines.push(`n${i} [label="${escapeQuotes(node.label)}", shape="${shape}"]`)
+  }
+  for (const edge of data.edges) {
+    let line = `n${edge.from} -> n${edge.to}`
+    const attrs = [defaultEdgeAttr]
+    if (edge.type === 'trueBranch') {
+      attrs.push('label="да"')
+    }
+    if (edge.type === 'falseBranch') {
+      attrs.push('label="нет"')
+    }
+    line += ` [${attrs.join(' ')}]`
+    lines.push(line)
+  }
+  for (const edge of data.deps) {
+    lines.push(`n${edge.from} -> n${edge.to} [style="dashed", constraint=false]`)
+  }
+  return `digraph { ${lines.join(';')} }`
+}
+
+export const dataToDdgDigraph = (code, tree) => {
+  return dataToDigraph(code, tree, 'style=invis')
+}
+
+export const dataToPdgDigraph = (code, tree) => {
+  return dataToDigraph(code, tree, 'style=solid')
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=Java,
+caption={asg.js}]
+import { getData as getAstData } from './ast'
+import { escapeQuotes } from './_common'
+
+const getInstructionEdges = (nodes, tree) => {
+  const edges = []
+  const nodeMap = new Map()
+  for (const node of nodes) {
+    if (node.orig) {
+      nodeMap.set(node.orig, node.idx)
+    }
+  }
+
+  const edgesQueue = []
+  const loopStack = []
+  const addInstructionNode = (idx) => {
+    do {
+      const e = edgesQueue.shift()
+      e.to = idx
+      edges.push(e)
+    } while (edgesQueue.length)
+    edgesQueue.push({
+      from: idx, to: null
+    })
+  }
+
+  const addItem = (item) => {
+    const adder = addItemByType[item._type]
+    if (adder) {
+      adder(item)
+    } else {
+      addInstructionNode(nodeMap.get(item))
+    }
+  }
+
+  const addItemByType = {
+    MethodDeclaration: (m) => {
+      edgesQueue.push({
+        from: nodeMap.get(m), to: null
+      })
+      addItem(m.body)
+    },
+    ExpressionStmt: (st) => {
+      addItem(st.expression)
+    },
+    BlockStmt: (st) => {
+      for (const statement of st.statements) {
+        addItem(statement)
+      }
+    },
+    WhileStmt: (st) => {
+      const idx = nodeMap.get(st.condition)
+      addInstructionNode(idx)
+      const loop = {
+        breaks: [],
+        continues: []
+      }
+      loopStack.push(loop)
+      addItem(st.body)
+      for (const edge of loop.continues) {
+        edgesQueue.push(edge)
+      }
+      while (edgesQueue.length) {
+        const e = edgesQueue.shift()
+        e.to = idx
+        edges.push(e)
+      }
+      edgesQueue.push({
+        from: idx, to: null
+      })
+      for (const edge of loop.breaks) {
+        edgesQueue.push(edge)
+      }
+      loopStack.pop()
+    },
+    ForStmt: (forSt) => {
+      for (const st of forSt.initialization) {
+        addItem(st)
+      }
+      const idx = nodeMap.get(forSt.compare)
+      addInstructionNode(idx)
+      const loop = {
+        breaks: [],
+        continues: []
+      }
+      loopStack.push(loop)
+      addItem(forSt.body)
+      for (const edge of loop.continues) {
+        edgesQueue.push(edge)
+      }
+      for (const st of forSt.update) {
+        addItem(st)
+      }
+      while (edgesQueue.length) {
+        const e = edgesQueue.shift()
+        e.to = idx
+        edges.push(e)
+      }
+      edgesQueue.push({
+        from: idx, to: null
+      })
+      for (const edge of loop.breaks) {
+        edgesQueue.push(edge)
+      }
+      loopStack.pop()
+    },
+    IfStmt: (st) => {
+      const idx = nodeMap.get(st.condition)
+      addInstructionNode(idx)
+      addItem(st.thenStmt)
+      const thenEdges = edgesQueue.splice(0, edgesQueue.length)
+      edgesQueue.push({
+        from: idx, to: null
+      })
+      if (st.elseStmt) {
+        addItem(st.elseStmt)
+      }
+      edgesQueue.push(...thenEdges)
+    },
+    ReturnStmt: (st) => {
+      addInstructionNode(nodeMap.get(st))
+      while (edgesQueue.length) {
+        edgesQueue.pop()
+      }
+    },
+    BreakStmt: () => {
+      const { breaks } = loopStack[loopStack.length - 1]
+      while (edgesQueue.length) {
+        breaks.push(edgesQueue.shift())
+      }
+    },
+    ContinueStmt: () => {
+      const { continues } = loopStack[loopStack.length - 1]
+      while (edgesQueue.length) {
+        continues.push(edgesQueue.shift())
+      }
+    }
+  }
+
+  addItem(tree)
+
+  return edges
+}
+
+const getVarEdges = (nodes, hierarchy) => {
+  const declTypes = ['VariableDeclarator', 'Parameter']
+  const useNodeIdxByVar = {}
+  const declNodeIdxByVar = {}
+  for (const [i, n] of nodes.entries()) {
+    if (n.orig && n.orig._type === 'SimpleName') {
+      const varName = n.orig.identifier
+      const identifierIdx = hierarchy[i][0]
+      if (declTypes.includes(nodes[n.from].orig._type)) {
+        declNodeIdxByVar[varName] = identifierIdx
+      } else {
+        if (!useNodeIdxByVar[varName]) {
+          useNodeIdxByVar[varName] = []
+        }
+        useNodeIdxByVar[varName].push(identifierIdx)
+      }
+    }
+  }
+  const varEdges = []
+  for (const [varName, declIdx] of Object.entries(declNodeIdxByVar)) {
+    for (const useIdx of useNodeIdxByVar[varName]) {
+      varEdges.push({ from: useIdx, to: declIdx })
+    }
+  }
+  return varEdges
+}
+
+export const getAsgData = (tree) => {
+  const { nodes, edges, hierarchy } = getAstData(tree)
+
+  const varEdges = getVarEdges(nodes, hierarchy)
+  const instrEdges = getInstructionEdges(nodes, tree)
+
+  return { nodes, edges, varEdges, instrEdges }
+}
+
+export const dataToAsgDigraph = ({ nodes, edges, varEdges, instrEdges }) => {
+  const lines = []
+  for (const [i, node] of nodes.entries()) {
+    lines.push(`n${i} [label="${escapeQuotes(node.label)}", shape="box"]`)
+  }
+  for (const edge of edges) {
+    lines.push(`n${edge.from} -> n${edge.to}`)
+  }
+  for (const edge of varEdges) {
+    lines.push(`n${edge.from} -> n${edge.to} [style="dashed", constraint=false, color="blue"]`)
+  }
+  for (const edge of instrEdges) {
+    lines.push(`n${edge.from} -> n${edge.to} [style="dashed", constraint=false, color="red"]`)
+  }
+  return `digraph { ${lines.join(';')} }`
+}
+\end{lstlisting}
