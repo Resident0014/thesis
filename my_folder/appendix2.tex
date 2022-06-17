@@ -6,9 +6,11 @@ numbersep = 5pt,
 stepnumber = 1
 }
 
-\begin{lstlisting}[language=Java,
-caption={ast.js}]
+\begin{flushright}
+Листинг П2.1. Содержимое файла ast.js
+\end{flushright}
 
+\begin{lstlisting}
 export const getData = (tree) => {
   const nodes = []
   const edges = []
@@ -74,8 +76,11 @@ export const dataToAstDigraph = (nodes, edges) => {
 }
 \end{lstlisting}
 
-\begin{lstlisting}[language=Java,
-caption={cfg.js}]
+\begin{flushright}
+Листинг П2.2. Содержимое файла cfg.js
+\end{flushright}
+
+\begin{lstlisting}
 import { getType, getCodeGetterByElement, escapeQuotes } from './_common'
 
 export const getCfgData = (code, tree) => {
@@ -304,8 +309,11 @@ export const cfgDataToDigraph = (cfgData) => {
 }
 \end{lstlisting}
 
-\begin{lstlisting}[language=Java,
-caption={ddg-pdg.js}]
+\begin{flushright}
+Листинг П2.3. Содержимое файла ddg-pdg.js
+\end{flushright}
+
+\begin{lstlisting}
 import { getType, escapeQuotes } from './_common'
 import { getCfgData } from './cfg'
 
@@ -516,8 +524,11 @@ export const dataToPdgDigraph = (code, tree) => {
 }
 \end{lstlisting}
 
-\begin{lstlisting}[language=Java,
-caption={asg.js}]
+\begin{flushright}
+Листинг П2.4. Содержимое файла asg.js
+\end{flushright}
+
+\begin{lstlisting}
 import { getData as getAstData } from './ast'
 import { escapeQuotes } from './_common'
 
